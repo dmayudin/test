@@ -1,0 +1,52 @@
+import { useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+export default function ImageComparison() {
+  const [image, setImage] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [similarity, setSimilarity] = useState(null);
+
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setImage(URL.createObjectURL(file));
+    }
+  };
+
+  const compareImages = async () => {
+    if (!image) return;
+    setProgress(20);
+
+    const formData = new FormData();
+    formData.append("image", image);
+    setProgress(50);
+
+    try {
+      const response = await fetch("http://localhost:8000/compare", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      setSimilarity(data.similarity);
+      setProgress(100);
+    } catch (error) {
+      console.error("Error comparing images:", error);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center space-y-4 p-4">
+      <input type="file" accept="image/*" onChange={handleImageUpload} />
+      <Card>
+        <CardContent className="flex justify-center">
+          {image && <img src={image} alt="Uploaded" className="max-h-60" />}
+        </CardContent>
+      </Card>
+      <Button onClick={compareImages}>Compare Images</Button>
+      <Progress value={progress} className="w-full" />
+      {similarity !== null && <p>Similarity: {similarity}%</p>}
+    </div>
+  );
+}
